@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>深層井戸掘削＆道の駅カフェ - 究極岩盤＆53万版</title>
+  <style>
+    * { box-sizing: border-box; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+    body {
+      margin: 0; padding: 4px; background: #0d0d0d; color: #eee;
+      font-family: monospace; display: flex; flex-direction: column; align-items: center;
+      min-height: 100vh;
+    }
+    #top-bar {
+      width: 340px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;
+    }
+    .fs-btn {
+      background: #333; color: #fff; border: 1px solid #666; border-radius: 4px;
+      padding: 3px 8px; font-size: 11px; cursor: pointer; font-weight: bold;
+    }
+    .fs-btn:active { background: #e67e22; }
+
+    #dashboard {
+      width: 340px; background: #1c1c1c; padding: 5px 8px; border-radius: 6px;
+      font-size: 11px; border: 1px solid #333; margin-bottom: 3px;
+    }
+    .bar-wrap { background: #2a2a2a; height: 6px; border-radius: 3px; overflow: hidden; margin: 2px 0 3px; }
+    .bar-fill { height: 100%; width: 100%; transition: width 0.1s; }
+    #hp-bar { background: #2ecc71; }
+    #o2-bar { background: #00d2d3; }
+    #rubble-bar { background: #e67e22; }
+    
+    #tool-bar, #item-bar {
+      width: 340px; display: flex; gap: 2px; margin-bottom: 3px; flex-wrap: wrap;
+    }
+    .action-btn {
+      flex: 1; min-width: 46px; padding: 4px 1px; background: #292929; color: #fff;
+      border: 1px solid #444; border-radius: 4px; font-size: 9px; cursor: pointer; text-align: center;
+    }
+    .action-btn.active { background: #c0392b; border-color: #e74c3c; font-weight: bold; }
+    .action-btn:disabled { background: #151515; color: #444; border-color: #222; cursor: not-allowed; }
+
+    .item-btn {
+      flex: 1; padding: 4px 2px; background: #6f4e37; color: #fff;
+      border: 1px solid #8d5b4c; border-radius: 4px; font-size: 10px; cursor: pointer; text-align: center; font-weight: bold;
+    }
+    .item-btn:disabled { background: #222; color: #555; border-color: #333; cursor: not-allowed; }
+    
+    canvas {
+      background: #000; border: 2px solid #444; border-radius: 4px;
+      image-rendering: pixelated; image-rendering: crisp-edges;
+    }
+
+    #controls-container {
+      width: 340px; display: flex; justify-content: center; align-items: center; margin-top: 4px;
+    }
+    #dpad {
+      position: relative; width: 136px; height: 136px;
+      background: #181818; border-radius: 50%; border: 2px solid #333; box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+    }
+    .pad-btn {
+      position: absolute; width: 44px; height: 44px; background: #282828; color: #fff;
+      border: 1px solid #444; border-radius: 12px; font-size: 16px; font-weight: bold;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      box-shadow: 0 3px 0 #111;
+    }
+    .pad-btn:active, .pad-btn.pressed {
+      background: #e67e22; border-color: #f39c12; transform: translateY(2px); box-shadow: 0 1px 0 #111;
+    }
+    #pad-up    { top: 4px;  left: 46px; }
+    #pad-down  { bottom: 4px; left: 46px; }
+    #pad-left  { top: 46px; left: 4px; }
+    #pad-right { top: 46px; right: 4px; }
+    #pad-center {
+      position: absolute; top: 52px; left: 52px; width: 32px; height: 32px;
+      background: #121212; border-radius: 50%; border: 1px solid #222; pointer-events: none;
+    }
+
+    #shop-panel {
+      width: 340px; background: #161616; padding: 6px 8px; border-radius: 4px;
+      margin-top: 4px; font-size: 10px; border: 1px solid #333; display: flex; flex-direction: column; gap: 3px;
+      max-height: 200px; overflow-y: auto;
+    }
+    .shop-row { display: flex; justify-content: space-between; align-items: center; padding: 2px 0; border-bottom: 1px solid #222; }
+    .shop-btn {
+      padding: 2px 6px; font-size: 9px; background: #27ae60; color: #fff;
+      border: none; border-radius: 3px; cursor: pointer;
+    }
+    .shop-btn:disabled { background: #2a2a2a; color: #555; cursor: not-allowed; }
+
+    #msg { margin-top: 3px; font-size: 11px; color: #f1c40f; min-height: 24px; text-align: center; width: 340px; }
+  </style>
+</head>
+<body id="gameBody">
+
+  <div id="top-bar">
+    <span style="font-weight:bold; font-size:12px; color:#3498db;">深層井戸 掘削＆道の駅CAFE</span>
+    <button class="fs-btn" onclick="toggleFullScreen()">⛶ 全画面</button>
+  </div>
+
+  <div id="dashboard">
+    <div style="display:flex; justify-content:space-between;">
+      <span>体力: <b id="hpText">100/100</b></span>
+      <span>地上天候: <b id="weatherText" style="color:#00d2d3;">晴れ ☀️</b></span>
+      <span>ランク: <b id="levelText" style="color:#f1c40f;">Lv.1</b></span>
+    </div>
+    <div class="bar-wrap"><div id="hp-bar" class="bar-fill"></div></div>
+
+    <div style="display:flex; justify-content:space-between;">
+      <span>O2酸素: <b id="o2Text" style="color:#00d2d3;">100%</b></span>
+      <span>換気: <b id="fanState" style="color:#2ecc71;">地上 (安全)</b></span>
+      <span>深さ: <b id="depthText">0.0m</b></span>
+    </div>
+    <div class="bar-wrap"><div id="o2-bar" class="bar-fill"></div></div>
+
+    <div style="display:flex; justify-content:space-between;">
+      <span>残土: <b id="rubbleText" style="color:#e67e22;">0/10 個</b></span>
+      <span>集積所: <b id="dumpText" style="color:#aaa;">0 個</b></span>
+      <span>汲上井戸水: <b id="waterCount" style="color:#3498db;">0 L</b></span>
+    </div>
+    <div class="bar-wrap"><div id="rubble-bar" class="bar-fill" style="width:0%;"></div></div>
+    
+    <div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa;">
+      <span>EXP: <b id="expText" style="color:#f39c12;">0/50</b></span>
+      <span>所持金: <b id="moneyText" style="color:#2ecc71; font-size:11px;">¥0</b></span>
+      <span>運搬設備: <b id="haulerState" style="color:#888;">徒歩</b></span>
+    </div>
+  </div>
+
+  <!-- ツールバー -->
+  <div id="tool-bar"></div>
+
+  <!-- 珈琲バー（井戸水汲み上げ後に解禁） -->
+  <div id="item-bar">
+    <button class="item-btn" id="btn_item_coffee" onclick="useCoffee()" disabled>☕ 極上井戸水珈琲 (未開通: 井戸水を汲み上げろ)</button>
+  </div>
+
+  <canvas id="game" width="320" height="350"></canvas>
+
+  <div id="controls-container">
+    <div id="dpad">
+      <button class="pad-btn" id="pad-up">▲</button>
+      <button class="pad-btn" id="pad-left">◀</button>
+      <div id="pad-center"></div>
+      <button class="pad-btn" id="pad-right">▶</button>
+      <button class="pad-btn" id="pad-down">▼</button>
+    </div>
+  </div>
+
+  <div id="msg">1マス=0.1m！約300マス先の帯水層を目指せ！</div>
+
+  <!-- ショップパネル -->
+  <div id="shop-panel">
+    <div style="font-weight:bold; color:#aaa; margin-bottom:2px;">【設備・アップグレード】</div>
+    <div class="shop-row">
+      <span>💨 送風ファン (地上設置)</span>
+      <button class="shop-btn" id="buyFanBtn" onclick="buyItem('fan', 50)">購入 (¥50)</button>
+    </div>
+    <div class="shop-row">
+      <span>💧 泥水排水ポンプ (地上設置)</span>
+      <button class="shop-btn" id="buyPumpBtn" onclick="buyItem('mud_pump', 120)">購入 (¥120)</button>
+    </div>
+    <div class="shop-row">
+      <span>🔩 井戸本管ポンプ (地上設置)</span>
+      <button class="shop-btn" id="buyWellPumpBtn" onclick="buyItem('well_pump', 250)">購入 (¥250)</button>
+    </div>
+    <div class="shop-row">
+      <span>⛓️ 手動チェーン＆バケツ (容量30個)</span>
+      <button class="shop-btn" id="buyPulleyBtn" onclick="buyItem('pulley', 150)">購入 (¥150)</button>
+    </div>
+    <div class="shop-row">
+      <span>⚙️ 電動モーターチェーン (自動搬送)</span>
+      <button class="shop-btn" id="buyMotorBtn" onclick="buyItem('motor', 500)">購入 (¥500)</button>
+    </div>
+    <div class="shop-row">
+      <span>🤿 携帯酸素ボンベ</span>
+      <button class="shop-btn" id="buyTankBtn" onclick="buyItem('o2_tank', 180)">購入 (¥180)</button>
+    </div>
+
+    <div style="font-weight:bold; color:#aaa; margin:4px 0 2px;">【掘削ツール購入】</div>
+    <div id="tool-shop-list"></div>
+  </div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+const COLS = 10;
+const ROWS = 320; // 約300マスで帯水層
+const TILE_SIZE = 32;
+const SURFACE_ROWS = 4;
+
+const T = {
+  AIR: 0,
+  SURFACE_SOIL: 1,
+  GARBAGE: 2,
+  WASTE_WOOD: 3,
+  SCRAP_METAL: 4,      // 序盤の金属ガラ（頑丈）
+  CONCRETE_RUBBLE: 5,  // 序盤のコンクリガラ（超頑丈）
+  BIG_BOULDER: 6,      // 巨大岩
+  SAND_GRAVEL: 7,
+  CLAY_LAYER: 8,
+  WET_MUD: 9,          // 帯水層手前泥水層
+  AQUIFER_GRAVEL: 10,  // 大礫帯水層（約300マス目）
+  // 多彩な岩盤（下層ほど耐久力増加）
+  ROCK_OCHRE: 11,      // 黄土色岩盤
+  ROCK_GREEN: 12,      // 緑色岩盤
+  ROCK_TEAL: 13,       // 青緑色岩盤
+  ROCK_BLACK: 14,      // 黒色玄武岩盤
+  BEDROCK: 15          // 最下層不透過基盤
+};
+
+let player = {
+  col: 2, row: SURFACE_ROWS - 1,
+  hp: 100, maxHp: 100, o2: 100, maxO2: 100,
+  hasO2Tank: false, rubble: 0, maxRubble: 10,
+  exp: 0, level: 1, nextExp: 50, money: 0,
+  facing: 1, currentAction: 'wood_shovel', swingTimer: 0,
+  ownedTools: { wood_shovel: true },
+  isDead: false
+};
+
+// 全14段階の掘削ツール
+const TOOLS = {
+  wood_shovel:   { name: '木のスコップ',     atk: 10, stamina: 0.2, exp: 2,  power: 1.0,  cost: 0,    reqLv: 1 },
+  iron_shovel:   { name: '鉄のスコップ',     atk: 15, stamina: 0.3, exp: 3,  power: 1.8,  cost: 30,   reqLv: 1 },
+  super_shovel:  { name: 'スーパースコップ', atk: 22, stamina: 0.4, exp: 4,  power: 2.8,  cost: 70,   reqLv: 2 },
+  pickaxe:       { name: 'つるはし',         atk: 30, stamina: 0.5, exp: 5,  power: 4.0,  cost: 120,  reqLv: 2 },
+  iron_pickaxe:  { name: '鉄のつるはし',     atk: 42, stamina: 0.6, exp: 6,  power: 6.0,  cost: 200,  reqLv: 3 },
+  super_pickaxe: { name: 'スーパーつるはし', atk: 58, stamina: 0.7, exp: 8,  power: 9.0,  cost: 320,  reqLv: 3 },
+  hammer:        { name: 'ハンマー',         atk: 75, stamina: 0.8, exp: 10, power: 13.0, cost: 480,  reqLv: 4 },
+  super_hammer:  { name: 'スーパーハンマー', atk: 100,stamina: 1.0, exp: 12, power: 19.0, cost: 700,  reqLv: 4 },
+  drill:         { name: '削岩機',           atk: 130,stamina: 1.2, exp: 15, power: 27.0, cost: 1000, reqLv: 5 },
+  super_drill:   { name: 'スーパー削岩機',   atk: 170,stamina: 1.4, exp: 18, power: 38.0, cost: 1400, reqLv: 5 },
+  hyper_drill:   { name: 'ハイパー削岩機',   atk: 220,stamina: 1.6, exp: 22, power: 52.0, cost: 2000, reqLv: 6 },
+  final_drill:   { name: '最後の削岩機',     atk: 300,stamina: 1.8, exp: 28, power: 75.0, cost: 3000, reqLv: 7 },
+  explosive:     { name: '爆薬',             atk: 450,stamina: 2.2, exp: 35, power: 120.0,cost: 4500, reqLv: 8 },
+  tnt:           { name: 'TNT',              atk: 700,stamina: 2.6, exp: 50, power: 200.0,cost: 7000, reqLv: 9 }
+};
+
+const ENEMY_TYPES = [
+  // 超超激レア：フリーザ（戦闘力53万）
+  { name: 'フリーザ',   hp: 530000, atk: 53.0, exp: 53000, money: 53000, icon: '👽', speed: 0.8, isFlying: true,  flyAmp: 14, flyFreq: 0.12, isFreeza: true },
+  { name: '金のハエ',   hp: 1,      atk: 0,    exp: 1000,  money: 50,    icon: '🪰✨', speed: 2.8, isFlying: true,  flyAmp: 18, flyFreq: 0.22, isGolden: true },
+  { name: '友人',       hp: 999,    atk: 0,    exp: 0,     money: 100,   icon: '🧑‍🤝‍🧑', speed: 0.4, isFlying: false, isFriend: true },
+  { name: 'カラス',     hp: 25,     atk: 3.5,  exp: 12,    money: 6,     icon: '🦅', speed: 1.1, isFlying: true,  flyAmp: 10, flyFreq: 0.08 },
+  { name: 'あり',       hp: 12,     atk: 1.2,  exp: 5,     money: 2,     icon: '🐜', speed: 0.5, isFlying: false },
+  { name: 'ミツバチ',   hp: 35,     atk: 4.0,  exp: 15,    money: 8,     icon: '🐝', speed: 1.0, isFlying: true,  flyAmp: 8,  flyFreq: 0.12 },
+  { name: 'タヌキ',     hp: 140,    atk: 7.0,  exp: 55,    money: 22,    icon: '🦝', speed: 0.7, isFlying: false },
+  { name: '道の駅駅長', hp: 450,    atk: 12.0, exp: 200,   money: 150,   icon: '👮', speed: 0.35, isFlying: false, boss: true },
+  { name: 'トラック',   hp: 1000,   atk: 25.0, exp: 400,   money: 300,   icon: '🚚', speed: 2.2, isFlying: false, isTruck: true }
+];
+
+let surfaceEquip = { fan: false, mudPump: false, wellPump: false };
+let upgrades = { pulley: false, motorChain: false };
+let dumpedRubbleCount = 0;
+let pumpedWaterLiters = 0;
+let aquiferDiscovered = false;
+
+let enemies = [];
+let particles = [];
+let damageTexts = [];
+
+const WEATHERS = ['晴れ ☀️', '曇り ☁️', '雨 🌧️', '雷雨 🌩️'];
+let currentWeather = '晴れ ☀️';
+let weatherParticles = [];
+let lightningFlash = 0;
+
+let grid = [];
+let tileHp = [];
+let maxHpGrid = [];
+let pipeGrid = [];
+let cameraY = 0;
+
+let fanConnected = false;
+let mudPumpActive = false;
+let wellPumpActive = false;
+
+function toggleFullScreen() {
+  initAudio();
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    const docEl = document.documentElement;
+    if (docEl.requestFullscreen) docEl.requestFullscreen().catch(()=>{});
+    else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  }
+}
+
+let audioCtx = null;
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playSE(freq, duration, type = 'square', volume = 0.08, bendFreq = 0) {
+  if (!audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    if (bendFreq !== 0) {
+      osc.frequency.exponentialRampToValueAtTime(Math.max(10, freq + bendFreq), audioCtx.currentTime + duration);
+    }
+    gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  } catch(e){}
+}
+
+function playDigSE(t) {
+  if (t === T.BIG_BOULDER || t === T.CONCRETE_RUBBLE || t === T.SCRAP_METAL || (t >= T.ROCK_OCHRE && t <= T.ROCK_BLACK)) {
+    playSE(900, 0.06, 'sawtooth', 0.1, -500);
+  } else if (t === T.WET_MUD) {
+    playSE(80, 0.12, 'sine', 0.2, -30);
+  } else {
+    playSE(250, 0.06, 'triangle', 0.1, -100);
+  }
+}
+
+function playBreakSE() { playSE(110, 0.15, 'sawtooth', 0.12, 60); }
+function playStepSE() { playSE(120, 0.03, 'triangle', 0.03); }
+function playAttackSE() { playSE(420, 0.12, 'sawtooth', 0.08, -360); }
+function playCritSE() { playSE(1000, 0.08, 'square', 0.15, 400); }
+function playMissSE() { playSE(180, 0.15, 'sine', 0.08, -50); }
+function playEnemyHitSE() { playSE(1200, 0.05, 'square', 0.08, 200); }
+function playDamageSE() { playSE(85, 0.15, 'sawtooth', 0.2, 20); }
+function playCoinSE() {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  playSE_at(987, 0.08, t, 'sine', 0.15);
+  playSE_at(1318, 0.2, t + 0.06, 'sine', 0.18);
+}
+function playHealSE() {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  playSE_at(523, 0.08, t, 'sine', 0.15);
+  playSE_at(659, 0.08, t + 0.07, 'sine', 0.15);
+  playSE_at(784, 0.08, t + 0.14, 'sine', 0.15);
+}
+function playAquiferFoundSE() {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  playSE_at(523, 0.12, t, 'sine', 0.2);
+  playSE_at(659, 0.12, t + 0.1, 'sine', 0.2);
+  playSE_at(784, 0.14, t + 0.2, 'sine', 0.2);
+  playSE_at(1046, 0.4, t + 0.32, 'sine', 0.25);
+}
+function playPumpWaterSE() {
+  if (!audioCtx) return;
+  playSE(180, 0.15, 'sine', 0.08, -50);
+}
+function playDumpSE() { playSE(140, 0.18, 'sawtooth', 0.12, -70); }
+function playEnemyDeathSE() {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  playSE_at(900, 0.05, t);
+  playSE_at(1200, 0.05, t + 0.05);
+  playSE_at(1600, 0.1, t + 0.1);
+}
+function playSE_at(freq, duration, startTime, type = 'square', volume = 0.1) {
+  if (!audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, startTime);
+    gainNode.gain.setValueAtTime(volume, startTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    osc.start(startTime);
+    osc.stop(startTime + duration);
+  } catch(e){}
+}
+
+// ----------------------------------------------------
+// マップ初期化（300マスで帯水層・強固な新岩盤層）
+// ----------------------------------------------------
+const AQUIFER_ROW_START = 295; // ★約300マス目（深さ約29.5m〜）
+const MUD_ROW_START = 270;     // 帯水層手前泥水層
+
+function initMap() {
+  grid = []; tileHp = []; maxHpGrid = []; pipeGrid = [];
+  for (let r = 0; r < ROWS; r++) {
+    let row = [], hpR = [], maxHpR = [], pRow = [];
+    for (let c = 0; c < COLS; c++) {
+      pRow.push(new Set());
+      if (r < SURFACE_ROWS) {
+        row.push(T.AIR); hpR.push(0); maxHpR.push(0);
+      } else if (r === ROWS - 1) {
+        row.push(T.BEDROCK); hpR.push(9999); maxHpR.push(9999);
+      } else if (r >= AQUIFER_ROW_START && r <= ROWS - 2) {
+        row.push(T.AQUIFER_GRAVEL); hpR.push(10); maxHpR.push(10); // 大礫帯水層
+      } else if (r >= MUD_ROW_START && r < AQUIFER_ROW_START) {
+        row.push(T.WET_MUD); hpR.push(20); maxHpR.push(20); // 泥濘層
+      } else if (r < SURFACE_ROWS + 20) {
+        // ★序盤：コンクリガラ＆金属ガラ高耐久配置
+        const rand = Math.random();
+        if (rand < 0.20) { row.push(T.CONCRETE_RUBBLE); hpR.push(25); maxHpR.push(25); } // 超頑丈
+        else if (rand < 0.35) { row.push(T.SCRAP_METAL); hpR.push(20); maxHpR.push(20); } // 頑丈
+        else if (rand < 0.45) { row.push(T.GARBAGE); hpR.push(4); maxHpR.push(4); }
+        else if (rand < 0.55) { row.push(T.WASTE_WOOD); hpR.push(5); maxHpR.push(5); }
+        else { row.push(T.SURFACE_SOIL); hpR.push(3); maxHpR.push(3); }
+      } else {
+        // ★深層に向かって強固さを増す多色岩盤
+        const depthRatio = (r - SURFACE_ROWS) / ROWS;
+        const baseRockHp = Math.floor(25 + depthRatio * 150); // 下層ほどさらに硬化！
+        const rand = Math.random();
+
+        if (rand < 0.15) {
+          row.push(T.BIG_BOULDER); // 岩5倍耐久力
+          const hp = baseRockHp * 2; hpR.push(hp); maxHpR.push(hp);
+        } else if (rand < 0.35) {
+          row.push(T.ROCK_OCHRE); // 黄土色岩盤
+          hpR.push(baseRockHp); maxHpR.push(baseRockHp);
+        } else if (rand < 0.55) {
+          row.push(T.ROCK_GREEN); // 緑色岩盤
+          const hp = Math.floor(baseRockHp * 1.2); hpR.push(hp); maxHpR.push(hp);
+        } else if (rand < 0.75) {
+          row.push(T.ROCK_TEAL); // 青緑色岩盤
+          const hp = Math.floor(baseRockHp * 1.4); hpR.push(hp); maxHpR.push(hp);
+        } else if (rand < 0.90) {
+          row.push(T.ROCK_BLACK); // 黒色玄武岩盤
+          const hp = Math.floor(baseRockHp * 1.8); hpR.push(hp); maxHpR.push(hp);
+        } else {
+          row.push(T.SAND_GRAVEL);
+          const hp = Math.floor(baseRockHp * 0.5); hpR.push(hp); maxHpR.push(hp);
+        }
+      }
+    }
+    grid.push(row); tileHp.push(hpR); maxHpGrid.push(maxHpR); pipeGrid.push(pRow);
+  }
+}
+
+function movePlayer(dc, dr) {
+  initAudio();
+  if (player.isDead) return;
+
+  const nc = player.col + dc;
+  const nr = player.row + dr;
+  if (nc < 0 || nc >= COLS || nr < 0 || nr >= ROWS) return;
+
+  const targetTile = grid[nr][nc];
+  if (targetTile === T.AIR || nr < SURFACE_ROWS) {
+    player.col = nc;
+    player.row = nr;
+    if (dc !== 0) player.facing = dc;
+    playStepSE();
+
+    checkFriendContact();
+
+    if (player.row >= AQUIFER_ROW_START && !aquiferDiscovered) {
+      aquiferDiscovered = true;
+      playAquiferFoundSE();
+      setMsg('✨ 奇跡！深さ約30mの良質な大礫帯水層を発見！本管ポンプで汲み上げろ！');
+    }
+
+    // 残土換金（1個¥5）
+    if (player.row === SURFACE_ROWS - 1 && player.col <= 1 && player.rubble > 0) {
+      const earned = player.rubble * 5;
+      dumpedRubbleCount += player.rubble;
+      player.money += earned;
+      playCoinSE();
+      createDamagePopup(player.col * TILE_SIZE + 16, player.row * TILE_SIZE, `+¥${earned}`, '#f1c40f');
+      setMsg(`残土を集積所に納入！(+${player.rubble}個 / 換金 +¥${earned})`);
+      player.rubble = 0;
+    }
+
+    if (upgrades.pulley && player.row < SURFACE_ROWS && player.rubble > 0) {
+      const earned = player.rubble * 5;
+      dumpedRubbleCount += player.rubble;
+      player.money += earned;
+      playCoinSE();
+      createDamagePopup(player.col * TILE_SIZE + 16, player.row * TILE_SIZE, `+¥${earned}`, '#f1c40f');
+      setMsg(`手動チェーンでバケツ一括引き上げ！(+${player.rubble}個 / 換金 +¥${earned})`);
+      player.rubble = 0;
+    }
+
+    updateSystemStatus();
+    checkOxygenEnvironment();
+    updateUI();
+  }
+}
+
+function checkFriendContact() {
+  if (player.row >= SURFACE_ROWS) return;
+  const px = player.col * TILE_SIZE;
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const en = enemies[i];
+    if (en.isFriend && Math.abs(en.x - px) < 24) {
+      player.money += en.money;
+      playCoinSE();
+      createDamagePopup(en.x + 10, en.y - 10, `+¥${en.money} 応援金!`, '#f1c40f');
+      setMsg(`🧑‍🤝‍🧑 友人「掘削頑張れよ！これ使ってくれ！」(+¥${en.money})`);
+      enemies.splice(i, 1);
+      updateUI();
+    }
+  }
+}
+
+// ----------------------------------------------------
+// 十字キー（長押しでずっと途切れず進める実装）
+// ----------------------------------------------------
+let activeDir = null;
+let moveTimer = null;
+
+function handleContinuousMove() {
+  if (!activeDir || player.isDead) return;
+  movePlayer(activeDir.dc, activeDir.dr);
+}
+
+function startDirection(dc, dr, btn) {
+  initAudio();
+  activeDir = { dc, dr };
+  btn.classList.add('pressed');
+  handleContinuousMove();
+  if (moveTimer) clearInterval(moveTimer);
+  moveTimer = setInterval(handleContinuousMove, 110); // 滑らかな長押し連続移動
+}
+
+function stopDirection(btn) {
+  if (btn) btn.classList.remove('pressed');
+  activeDir = null;
+  if (moveTimer) {
+    clearInterval(moveTimer);
+    moveTimer = null;
+  }
+}
+
+function setupDpadButton(btnId, dc, dr) {
+  const btn = document.getElementById(btnId);
+  btn.addEventListener('pointerdown', (e) => { e.preventDefault(); startDirection(dc, dr, btn); });
+  btn.addEventListener('pointerup',   (e) => { e.preventDefault(); stopDirection(btn); });
+  btn.addEventListener('pointercancel', (e) => { e.preventDefault(); stopDirection(btn); });
+  btn.addEventListener('pointerleave',  (e) => { e.preventDefault(); stopDirection(btn); });
+}
+
+setupDpadButton('pad-up', 0, -1);
+setupDpadButton('pad-down', 0, 1);
+setupDpadButton('pad-left', -1, 0);
+setupDpadButton('pad-right', 1, 0);
+
+window.addEventListener('keydown', (e) => {
+  if (player.isDead || e.repeat) return;
+  if (e.key === 'ArrowUp' || e.key === 'w') startDirection(0, -1, document.getElementById('pad-up'));
+  if (e.key === 'ArrowDown' || e.key === 's') startDirection(0, 1, document.getElementById('pad-down'));
+  if (e.key === 'ArrowLeft' || e.key === 'a') startDirection(-1, 0, document.getElementById('pad-left'));
+  if (e.key === 'ArrowRight' || e.key === 'd') startDirection(1, 0, document.getElementById('pad-right'));
+});
+
+window.addEventListener('keyup', (e) => {
+  stopDirection(document.getElementById('pad-up'));
+  stopDirection(document.getElementById('pad-down'));
+  stopDirection(document.getElementById('pad-left'));
+  stopDirection(document.getElementById('pad-right'));
+});
+
+function triggerDeath() {
+  if (player.isDead) return;
+  player.isDead = true;
+  player.hp = 0;
+  player.rubble = 0;
+  playDamageSE();
+  setMsg('<b style="color:#e74c3c;">💀 力尽きてしまった... 地上へ救護搬送されます！</b>');
+  updateUI();
+
+  setTimeout(() => {
+    player.isDead = false;
+    player.hp = player.maxHp;
+    player.o2 = player.maxO2;
+    player.col = 2;
+    player.row = SURFACE_ROWS - 1;
+    player.facing = 1;
+    cameraY = 0;
+    updateSystemStatus();
+    updateUI();
+    setMsg('道の駅カフェで手当てを受け、体力が全快した！');
+  }, 2500);
+}
+
+function checkNetworkConnection(pipeKey, startC, targetCond) {
+  const startR = SURFACE_ROWS - 1;
+  if (!pipeGrid[startR][startC].has(pipeKey)) return false;
+
+  let queue = [{ r: startR, c: startC }];
+  let visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+  visited[startR][startC] = true;
+  const dirs = [[0,1], [0,-1], [1,0], [-1,0]];
+
+  while (queue.length > 0) {
+    const { r, c } = queue.shift();
+    for (const [dr, dc] of dirs) {
+      const nr = r + dr, nc = c + dc;
+      if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
+        if (targetCond === 'PLAYER') {
+          if (Math.abs(nr - player.row) <= 1 && Math.abs(nc - player.col) <= 1) return true;
+        } else if (targetCond === 'MUD') {
+          if (grid[nr][nc] === T.WET_MUD) return true;
+        } else if (targetCond === 'AQUIFER') {
+          if (nr >= AQUIFER_ROW_START || grid[nr][nc] === T.AQUIFER_GRAVEL) return true;
+        }
+        if (!visited[nr][nc] && pipeGrid[nr][nc].has(pipeKey)) {
+          visited[nr][nc] = true;
+          queue.push({ r: nr, c: nc });
+        }
+      }
+    }
+  }
+  return false;
+}
+
+function updateSystemStatus() {
+  fanConnected = surfaceEquip.fan && checkNetworkConnection('duct', 3, 'PLAYER');
+  mudPumpActive = surfaceEquip.mudPump && checkNetworkConnection('hose', 7, 'MUD');
+  wellPumpActive = surfaceEquip.wellPump && checkNetworkConnection('pipe', 5, 'AQUIFER');
+
+  const inDeep = player.row >= SURFACE_ROWS + 50;
+  const fText = document.getElementById('fanState');
+  if (player.hasO2Tank) {
+    fText.innerText = 'ボンベ呼吸 🤿'; fText.style.color = '#00d2d3';
+  } else if (!surfaceEquip.fan) {
+    fText.innerText = inDeep ? 'ファン未購入(酸欠危険) 🔴' : '地上 (安全) 🟢';
+    fText.style.color = inDeep ? '#e74c3c' : '#2ecc71';
+  } else if (fanConnected) {
+    fText.innerText = 'ダクト換気中 🟢'; fText.style.color = '#2ecc71';
+  } else if (!inDeep) {
+    fText.innerText = '地上 (安全) 🟢'; fText.style.color = '#2ecc71';
+  } else {
+    fText.innerText = 'ダクト未接続(酸欠危険) 🔴'; fText.style.color = '#e74c3c';
+  }
+
+  const pText = document.getElementById('pumpState');
+  if (!surfaceEquip.mudPump) {
+    pText.innerText = 'ポンプ未購入 ✖'; pText.style.color = '#888';
+  } else if (mudPumpActive) {
+    pText.innerText = '泥水排水中 🟢'; pText.style.color = '#2ecc71';
+  } else {
+    pText.innerText = 'ホース未接続 🔴'; pText.style.color = '#e74c3c';
+  }
+}
+
+function checkOxygenEnvironment() {
+  if (player.isDead) return;
+  updateSystemStatus();
+  if (player.row >= SURFACE_ROWS + 50 && !fanConnected && !player.hasO2Tank) {
+    setMsg('⚠️ 警告：深さ5m突破！送風管を繋ぐか携帯ボンベを装備しないと窒息します！');
+  }
+}
+
+// ----------------------------------------------------
+// 珈琲（井戸水汲み上げ後に解禁・全回復）
+// ----------------------------------------------------
+function useCoffee() {
+  if (player.isDead) return;
+  initAudio();
+
+  if (pumpedWaterLiters <= 0) {
+    setMsg('本管で帯水層から井戸水を汲み上げるまで珈琲は淹れられません！');
+    return;
+  }
+  if (player.money < 50) {
+    setMsg('お金が足りません！ (珈琲: ¥50 / 所持: ¥' + player.money + ')');
+    return;
+  }
+  if (player.hp >= player.maxHp) {
+    setMsg('体力はすでに満タンです！');
+    return;
+  }
+
+  player.money -= 50;
+  player.hp = player.maxHp;
+  playHealSE();
+  createDamagePopup(player.col * TILE_SIZE + 16, player.row * TILE_SIZE, 'FULL MAX!', '#f39c12');
+  setMsg('☕ 汲みたて天然井戸水珈琲を味わった！ 体力全快！！ (-¥50)');
+  updateUI();
+}
+
+function handleTap(evt) {
+  initAudio();
+  if (player.isDead) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+  const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+  const clickX = clientX - rect.left;
+  const clickY = clientY - rect.top + cameraY;
+
+  for (let i = 0; i < enemies.length; i++) {
+    const en = enemies[i];
+    if (Math.abs(en.x - clickX) < 30 && Math.abs(en.y - clickY) < 30) {
+      if (en.isFriend) { checkFriendContact(); return; }
+      attackEnemy(i);
+      return;
+    }
+  }
+
+  const col = Math.floor(clickX / TILE_SIZE);
+  const row = Math.floor(clickY / TILE_SIZE);
+  if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return;
+
+  const dist = Math.abs(player.col - col) + Math.abs(player.row - row);
+  if (dist > 1.8) {
+    setMsg('遠すぎる！キャラのすぐ隣のマスをタップしてください。');
+    return;
+  }
+
+  const t = grid[row][col];
+  const act = player.currentAction;
+
+  if (act === 'duct' || act === 'hose' || act === 'pipe') {
+    if (t === T.AIR) {
+      const pSet = pipeGrid[row][col];
+      if (pSet.has(act)) { setMsg('このマスにはすでに敷設済みです。'); return; }
+      pSet.add(act);
+      playSE(720, 0.05, 'square', 0.08, 100);
+      setMsg(act === 'duct' ? '💨 送風管を配管！' : act === 'hose' ? '💧 排水管を配管！' : '🔩 井戸本管を配管！');
+      updateSystemStatus();
+      checkOxygenEnvironment();
+      updateUI();
+    }
+    return;
+  }
+
+  if (t !== T.AIR && t !== T.BEDROCK) {
+    if (!upgrades.motorChain && player.rubble >= player.maxRubble) {
+      setMsg('⚠️ 残土カゴが満杯！地上の集積所へ運んで捨てよう！');
+      return;
+    }
+
+    const tool = TOOLS[act];
+    let staminaCost = tool.stamina;
+    if (t === T.WET_MUD && !mudPumpActive) staminaCost *= 3.0;
+
+    if (player.hp < staminaCost) {
+      setMsg('スタミナ切れ！休憩するか珈琲で回復しよう！');
+      return;
+    }
+
+    player.hp = Math.max(0, player.hp - staminaCost);
+    player.facing = (col >= player.col) ? 1 : -1;
+    player.swingTimer = 8;
+
+    const roll = Math.random();
+    let mult = 1.0;
+    if (roll < 0.12) {
+      mult = 5.0; playCritSE();
+      createDamagePopup(col * TILE_SIZE + 16, row * TILE_SIZE, 'CRITICAL 5x!!', '#f1c40f');
+    } else if (roll < 0.28) {
+      mult = 0.1; playMissSE();
+      createDamagePopup(col * TILE_SIZE + 16, row * TILE_SIZE, 'MISS 0.1x', '#95a5a6');
+    } else {
+      playDigSE(t);
+    }
+
+    let dmg = tool.power * mult;
+    if (t === T.WET_MUD && !mudPumpActive) {
+      dmg = Math.max(0.05, dmg * 0.05);
+      setMsg('⚠️ 泥水が噴き出して進まない！排水ポンプと排水管で泥水を抜け！');
+    }
+
+    tileHp[row][col] -= dmg;
+    createParticles(col * TILE_SIZE + 16, row * TILE_SIZE + 16, t);
+
+    if (tileHp[row][col] <= 0) {
+      playBreakSE();
+      grid[row][col] = T.AIR;
+      const gain = tool.exp + player.level;
+      gainExp(gain);
+
+      if (upgrades.motorChain) {
+        dumpedRubbleCount++;
+        player.money += 5;
+        playCoinSE();
+        setMsg(`破砕！残土は電動モーターで自動集積！ +${gain} EXP (+¥5)`);
+      } else {
+        player.rubble++;
+        setMsg(`破砕！残土(+1)をカゴに収容 (計${player.rubble}/${player.maxRubble}個) +${gain} EXP`);
+      }
+    } else {
+      setMsg(`採掘中！(残り耐久: ${Math.ceil(tileHp[row][col])})`);
+    }
+
+    updateSystemStatus();
+    updateUI();
+  }
+}
+
+canvas.addEventListener('pointerdown', (e) => { e.preventDefault(); handleTap(e); });
+
+// ----------------------------------------------------
+// 戦闘（フリーザ53万対応）
+// ----------------------------------------------------
+function attackEnemy(index) {
+  playAttackSE();
+  const en = enemies[index];
+  const tool = TOOLS[player.currentAction] || TOOLS.wood_shovel;
+  const dmg = tool.atk + (player.level * 3);
+  en.hp -= dmg;
+
+  createDamagePopup(en.x + 10, en.y - 10, `-${dmg}`, '#ff4757');
+
+  for (let i = 0; i < 8; i++) {
+    particles.push({
+      x: en.x + 10, y: en.y - 5,
+      vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.8) * 6, life: 16,
+      color: en.isFreeza ? '#a29bfe' : (en.isGolden ? '#f1c40f' : '#bdc3c7')
+    });
+  }
+
+  setMsg(`${tool.name}で${en.name}に攻撃！ ${dmg} ダメージ！`);
+
+  if (en.hp <= 0) {
+    playEnemyDeathSE();
+    playCoinSE();
+    player.money += en.money;
+    createDamagePopup(en.x + 10, en.y - 20, `+¥${en.money}`, '#f1c40f');
+
+    if (en.isFreeza) {
+      playCritSE();
+      createDamagePopup(en.x + 10, en.y - 35, `+${en.exp} EXP!!`, '#a29bfe');
+      setMsg(`👑 超超激レア【戦闘力53万フリーザ】を討伐！！ +${en.exp} EXP ＆ +¥${en.money} 獲得！！`);
+      gainExp(en.exp);
+    } else if (en.isGolden) {
+      playCritSE();
+      createDamagePopup(en.x + 10, en.y - 35, `+${en.exp} EXP!!`, '#00d2d3');
+      setMsg(`🌟 激レア【金のハエ】を討伐！ +${en.exp} EXP ＆ +¥${en.money} 獲得！`);
+      gainExp(en.exp);
+    } else {
+      setMsg(`${en.name}を撃破！ 賞金 +¥${en.money} ＆ +${en.exp} EXP 獲得！`);
+      gainExp(en.exp);
+    }
+
+    for (let i = 0; i < 24; i++) {
+      particles.push({
+        x: en.x + 10, y: en.y - 5,
+        vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8, life: 25,
+        color: ['#e74c3c', '#e67e22', '#f1c40f', '#a29bfe'][Math.floor(Math.random() * 4)]
+      });
+    }
+    enemies.splice(index, 1);
+  } else {
+    playEnemyHitSE();
+  }
+  updateUI();
+}
+
+function createDamagePopup(x, y, text, color) {
+  damageTexts.push({ x: x, y: y, text: text, color: color, life: 35, vy: -1.2 });
+}
+
+function gainExp(amount) {
+  player.exp += amount;
+  while (player.exp >= player.nextExp) {
+    player.exp -= player.nextExp;
+    player.level++;
+    player.nextExp = Math.floor(player.nextExp * 1.5);
+    player.maxHp += 10;
+    player.hp = player.maxHp;
+    playCritSE();
+    createDamagePopup(player.col * TILE_SIZE + 16, player.row * TILE_SIZE - 10, 'LEVEL UP!', '#f1c40f');
+    setMsg(`🎉 レベルアップ！ Lv.${player.level} 達成！ 最大体力+10＆新装備解放！`);
+  }
+  updateUI();
+}
+
+function selectAction(act) {
+  player.currentAction = act;
+  document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById(`btn_${act}`);
+  if (btn) btn.classList.add('active');
+}
+
+function buyTool(toolKey, cost) {
+  if (player.money >= cost && player.level >= TOOLS[toolKey].reqLv) {
+    player.money -= cost;
+    player.ownedTools[toolKey] = true;
+    playCritSE();
+    setMsg(`⛏️ ${TOOLS[toolKey].name}を購入した！ (-¥${cost})`);
+    buildToolButtons();
+    updateUI();
+  }
+}
+
+function buyItem(itemKey, cost) {
+  if (player.money >= cost) {
+    player.money -= cost;
+    if (itemKey === 'fan') {
+      surfaceEquip.fan = true;
+      document.getElementById('buyFanBtn').disabled = true;
+      document.getElementById('buyFanBtn').innerText = '設置済 ✔';
+      setMsg('💨 送風ファンを地上に設置！(-¥' + cost + ')');
+    } else if (itemKey === 'mud_pump') {
+      surfaceEquip.mudPump = true;
+      document.getElementById('buyPumpBtn').disabled = true;
+      document.getElementById('buyPumpBtn').innerText = '設置済 ✔';
+      setMsg('💧 泥水排水ポンプを地上に設置！(-¥' + cost + ')');
+    } else if (itemKey === 'well_pump') {
+      surfaceEquip.wellPump = true;
+      document.getElementById('buyWellPumpBtn').disabled = true;
+      document.getElementById('buyWellPumpBtn').innerText = '設置済 ✔';
+      setMsg('🔩 井戸本管ポンプを地上に設置！(-¥' + cost + ')');
+    } else if (itemKey === 'pulley') {
+      upgrades.pulley = true;
+      player.maxRubble = 30;
+      document.getElementById('buyPulleyBtn').disabled = true;
+      document.getElementById('buyPulleyBtn').innerText = '装備済 ✔';
+      document.getElementById('haulerState').innerText = '手動チェーン＆バケツ';
+      setMsg('⛓️ 手動チェーン＆バケツ導入！残土集積所が変形し、残土容量が30個に拡張！');
+    } else if (itemKey === 'motor') {
+      upgrades.motorChain = true;
+      document.getElementById('buyMotorBtn').disabled = true;
+      document.getElementById('buyMotorBtn').innerText = '稼働中 ✔';
+      document.getElementById('haulerState').innerText = '電動全自動 ⚡';
+      document.getElementById('haulerState').style.color = '#00d2d3';
+      setMsg('⚙️ 電動モーターチェーン稼働！残土は掘った瞬間に自動搬送！');
+    } else if (itemKey === 'o2_tank') {
+      player.hasO2Tank = true;
+      document.getElementById('buyTankBtn').disabled = true;
+      document.getElementById('buyTankBtn').innerText = '装備中 ✔';
+      setMsg('🤿 携帯酸素ボンベ装備！換気なしでも深部呼吸可能！(-¥' + cost + ')');
+    }
+    playCritSE();
+    updateSystemStatus();
+    updateUI();
+  }
+}
+
+function createParticles(x, y, t) {
+  let color = '#795548';
+  if (t === T.CONCRETE_RUBBLE || t === T.BIG_BOULDER) color = '#7f8c8d';
+  if (t === T.SCRAP_METAL) color = '#bdc3c7';
+  if (t === T.WET_MUD) color = '#2980b9';
+  if (t === T.AQUIFER_GRAVEL) color = '#00a8ff';
+  if (t === T.ROCK_OCHRE) color = '#c0392b';
+  if (t === T.ROCK_GREEN) color = '#27ae60';
+  if (t === T.ROCK_TEAL) color = '#16a085';
+  if (t === T.ROCK_BLACK) color = '#2d3436';
+
+  for (let i = 0; i < 7; i++) {
+    particles.push({
+      x: x, y: y,
+      vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.8) * 4,
+      life: 14, color: color
+    });
+  }
+}
+
+function spawnEnemy() {
+  if (enemies.length < 4) {
+    const roll = Math.random();
+    let proto;
+
+    if (roll < 0.01) {
+      // 1% 超超激レア：フリーザ（戦闘力53万）
+      proto = ENEMY_TYPES[0];
+    } else if (roll < 0.05) {
+      proto = ENEMY_TYPES[1]; // 金のハエ
+    } else if (roll < 0.18) {
+      proto = ENEMY_TYPES[2]; // 友人
+    } else if (roll < 0.32) {
+      proto = ENEMY_TYPES[3]; // カラス
+    } else if (roll < 0.55) {
+      proto = ENEMY_TYPES[4]; // あり
+    } else if (roll < 0.72) {
+      proto = ENEMY_TYPES[5]; // ハチ
+    } else if (roll < 0.86) {
+      proto = ENEMY_TYPES[6]; // タヌキ
+    } else if (roll < 0.94 && player.level >= 2) {
+      proto = ENEMY_TYPES[7]; // 駅長
+    } else {
+      proto = ENEMY_TYPES[8]; // トラック
+    }
+
+    const groundY = (SURFACE_ROWS - 1) * TILE_SIZE + 10;
+    enemies.push({
+      ...proto,
+      x: canvas.width + 10,
+      y: proto.isFlying ? ((SURFACE_ROWS - 2) * TILE_SIZE + 8 + Math.random() * 12) : groundY,
+      baseY: (SURFACE_ROWS - 2) * TILE_SIZE + 8,
+      time: Math.random() * 100,
+      atkTimer: 0
+    });
+  }
+}
+
+function initEnemies() {
+  enemies = [];
+  spawnEnemy();
+}
+
+setInterval(spawnEnemy, 6000);
+
+setInterval(() => {
+  currentWeather = WEATHERS[Math.floor(Math.random() * WEATHERS.length)];
+  document.getElementById('weatherText').innerText = currentWeather;
+  if (currentWeather.includes('雷')) lightningFlash = 16;
+}, 35000);
+
+setInterval(() => {
+  if (player.isDead) return;
+  if (player.hp < player.maxHp) player.hp = Math.min(player.maxHp, player.hp + 0.5);
+
+  updateSystemStatus();
+  const inDeep = player.row >= SURFACE_ROWS + 50;
+
+  if (inDeep && !fanConnected && !player.hasO2Tank) {
+    player.o2 = Math.max(0, player.o2 - 10);
+    if (player.o2 <= 0) {
+      player.hp = Math.max(0, player.hp - 6);
+      playDamageSE();
+      createDamagePopup(player.col * TILE_SIZE + 16, player.row * TILE_SIZE, '-6 O2窒息', '#e74c3c');
+      setMsg('💀 息ができない！激しい酸欠ダメージ！送風管を引くか地上へ退避せよ！');
+      if (player.hp <= 0) triggerDeath();
+    }
+  } else {
+    player.o2 = Math.min(player.maxO2, player.o2 + 25);
+  }
+
+  if (!mudPumpActive) {
+    for (let r = MUD_ROW_START; r < AQUIFER_ROW_START; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (grid[r][c] === T.WET_MUD && tileHp[r][c] < maxHpGrid[r][c]) {
+          tileHp[r][c] = Math.min(maxHpGrid[r][c], tileHp[r][c] + 0.3);
+        }
+      }
+    }
+  }
+
+  // ★井戸水本管汲み上げ：毎秒汲み上げ量アップ
+  if (wellPumpActive) {
+    pumpedWaterLiters += 35;
+    player.money += 15; // カフェ売上（1/10バランス）
+    playPumpWaterSE();
+    createDamagePopup(5 * TILE_SIZE + 16, (SURFACE_ROWS-1) * TILE_SIZE, '+35L (+¥15)', '#3498db');
+    document.getElementById('waterCount').innerText = `${pumpedWaterLiters} L`;
+  }
+
+  updateUI();
+}, 1000);
+
+function update() {
+  if (player.swingTimer > 0) player.swingTimer--;
+
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const en = enemies[i];
+    en.time += 0.05;
+    en.x -= en.speed;
+
+    if (en.isFlying) {
+      en.y = en.baseY + Math.sin(en.time * en.flyFreq * 50) * en.flyAmp;
+    } else {
+      en.y = (SURFACE_ROWS - 1) * TILE_SIZE + 10;
+      if (en.isTruck && Math.random() < 0.4) {
+        particles.push({
+          x: en.x + 25, y: en.y + 4,
+          vx: Math.random() * 2, vy: -Math.random() * 1.5,
+          life: 12, color: '#bdc3c7'
+        });
+      }
+    }
+
+    if (player.row < SURFACE_ROWS && !player.isDead) {
+      const px = player.col * TILE_SIZE;
+      if (Math.abs(en.x - px) < 20) {
+        if (en.isFriend) {
+          checkFriendContact();
+        } else if (!en.isGolden) {
+          en.atkTimer = (en.atkTimer || 0) + 1;
+          if (en.atkTimer % 20 === 1) {
+            player.hp = Math.max(0, player.hp - en.atk);
+            playDamageSE();
+            createDamagePopup(px + 10, player.row * TILE_SIZE, `-${en.atk.toFixed(1)}`, '#e74c3c');
+            updateUI();
+            if (player.hp <= 0) { triggerDeath(); break; }
+          }
+        }
+      }
+    }
+    if (en.x < -40) enemies.splice(i, 1);
+  }
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy;
+    p.life--;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  for (let i = damageTexts.length - 1; i >= 0; i--) {
+    const dt = damageTexts[i];
+    dt.y += dt.vy;
+    dt.life--;
+    if (dt.life <= 0) damageTexts.splice(i, 1);
+  }
+
+  if (currentWeather.includes('雨') || currentWeather.includes('雷')) {
+    if (Math.random() < 0.6) {
+      weatherParticles.push({
+        x: Math.random() * canvas.width,
+        y: cameraY - 10,
+        vx: (Math.random() - 0.5), vy: 6
+      });
+    }
+  }
+  const surfaceBottomY = SURFACE_ROWS * TILE_SIZE;
+  for (let i = weatherParticles.length - 1; i >= 0; i--) {
+    const wp = weatherParticles[i];
+    wp.x += wp.vx; wp.y += wp.vy;
+    if (wp.y > surfaceBottomY || wp.y > cameraY + canvas.height) {
+      weatherParticles.splice(i, 1);
+    }
+  }
+
+  draw();
+  requestAnimationFrame(update);
+}
+
+function draw() {
+  const targetCamY = Math.max(0, Math.min(ROWS * TILE_SIZE - canvas.height, player.row * TILE_SIZE - canvas.height / 2));
+  cameraY += (targetCamY - cameraY) * 0.15;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(0, -Math.floor(cameraY));
+
+  // 青空＆太陽＆山
+  ctx.fillStyle = '#64b5f6';
+  ctx.fillRect(0, 0, canvas.width, (SURFACE_ROWS - 1) * TILE_SIZE);
+  ctx.fillStyle = '#fff176';
+  ctx.beginPath();
+  ctx.arc(280, 24, 14, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#81c784';
+  ctx.beginPath();
+  ctx.moveTo(0, (SURFACE_ROWS - 1) * TILE_SIZE);
+  ctx.lineTo(60, (SURFACE_ROWS - 2) * TILE_SIZE);
+  ctx.lineTo(130, (SURFACE_ROWS - 1) * TILE_SIZE);
+  ctx.lineTo(210, (SURFACE_ROWS - 2) * TILE_SIZE - 10);
+  ctx.lineTo(320, (SURFACE_ROWS - 1) * TILE_SIZE);
+  ctx.fill();
+
+  // カフェ建物
+  ctx.fillStyle = '#5d4037';
+  ctx.fillRect(4, 20, 72, 60);
+  ctx.fillStyle = '#e74c3c';
+  ctx.fillRect(0, 14, 80, 10);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 9px monospace';
+  ctx.fillText('道の駅CAFE', 10, 36);
+  ctx.fillStyle = '#ffecb3';
+  ctx.fillRect(12, 44, 20, 20);
+  ctx.fillStyle = '#3e2723';
+  ctx.fillRect(42, 44, 18, 36);
+
+  // 芝生＆地下背景
+  ctx.fillStyle = '#2e7d32';
+  ctx.fillRect(0, (SURFACE_ROWS - 1) * TILE_SIZE, canvas.width, 10);
+  ctx.fillStyle = '#1e110c';
+  ctx.fillRect(0, (SURFACE_ROWS - 1) * TILE_SIZE + 10, canvas.width, (ROWS - SURFACE_ROWS + 1) * TILE_SIZE);
+
+  // タイル描画
+  const startR = Math.max(0, Math.floor(cameraY / TILE_SIZE) - 1);
+  const endR = Math.min(ROWS - 1, Math.floor((cameraY + canvas.height) / TILE_SIZE) + 1);
+
+  for (let r = startR; r <= endR; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const x = c * TILE_SIZE, y = r * TILE_SIZE;
+      const t = grid[r][c];
+
+      if (t === T.SURFACE_SOIL) {
+        ctx.fillStyle = '#5d4037'; ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = '#4e342e'; ctx.fillRect(x+4, y+6, 6, 4); ctx.fillRect(x+18, y+16, 8, 4);
+      } else if (t === T.GARBAGE) {
+        ctx.fillStyle = '#6d4c41'; ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = '#e74c3c'; ctx.fillRect(x+4, y+6, 6, 4);
+        ctx.fillStyle = '#3498db'; ctx.fillRect(x+16, y+14, 8, 5);
+      } else if (t === T.WASTE_WOOD) {
+        ctx.fillStyle = '#795548'; ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = '#3e2723'; ctx.fillRect(x+2, y+10, 28, 6);
+        ctx.fillStyle = '#9e9e9e'; ctx.fillRect(x+8, y+12, 3, 2);
+      } else if (t === T.SCRAP_METAL) {
+        ctx.fillStyle = '#37474f'; ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = '#c0392b'; ctx.fillRect(x+4, y+4, 24, 4);
+        ctx.fillStyle = '#90a4ae'; ctx.fillRect(x+12, y+2, 4, 26);
+      } else if (t === T.CONCRETE_RUBBLE) {
+        ctx.fillStyle = '#616161'; ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = '#424242'; ctx.fillRect(x+4, y+4, 12, 12); ctx.fillRect(x+16, y+16, 12, 10);
+      } else if (t === T.BIG_BOULDER) {
+        ctx.fillStyle = '#2d3436'; ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = '#1e272e'; ctx.fillRect(x+6, y+6, 20, 20);
+      } else if (t === T.CLAY_LAYER) {
+        ctx.fillStyle = '#8d6e63'; ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = '#6d4c41'; ctx.fillRect(x+2, y+14, 28, 4);
+      } else if (t === T.SAND_GRAVEL) {
+        ctx.fillStyle = '#d4ac0d'; ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = '#f7dc6f'; ctx.fillRect(x+4, y+4, 4, 4); ctx.fillRect(x+18, y+18, 4, 4);
+      } else if (t === T.WET_MUD) {
+        ctx.fillStyle = mudPumpActive ? '#5d4037' : '#0c2461';
+        ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = mudPumpActive ? '#795548' : '#1e3799';
+        ctx.fillRect(x+4, y+6, 10, 6); ctx.fillRect(x+16, y+16, 12, 6);
+      } else if (t === T.AQUIFER_GRAVEL) {
+        ctx.fillStyle = '#0277bd'; ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = '#cfd8dc';
+        ctx.fillRect(x+3, y+3, 11, 9); ctx.fillRect(x+17, y+15, 12, 11);
+      } else if (t === T.ROCK_OCHRE) {
+        ctx.fillStyle = '#b7791f'; ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = '#744210'; ctx.fillRect(x+4, y+4, 8, 8); ctx.fillRect(x+18, y+14, 10, 8);
+      } else if (t === T.ROCK_GREEN) {
+        ctx.fillStyle = '#22543d'; ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = '#1c4532'; ctx.fillRect(x+6, y+6, 12, 8); ctx.fillRect(x+14, y+18, 12, 8);
+      } else if (t === T.ROCK_TEAL) {
+        ctx.fillStyle = '#234e52'; ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = '#1d4044'; ctx.fillRect(x+4, y+12, 14, 10);
+      } else if (t === T.ROCK_BLACK) {
+        ctx.fillStyle = '#1a202c'; ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = '#171923'; ctx.fillRect(x+6, y+6, 12, 12);
+      }
+
+      if (t === T.AIR && r >= SURFACE_ROWS) {
+        ctx.fillStyle = '#140a06';
+        ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+      }
+
+      const pSet = pipeGrid[r][c];
+      if (pSet && pSet.size > 0) {
+        const cx = x + 16, cy = y + 16;
+        if (pSet.has('duct')) {
+          ctx.fillStyle = '#f1c40f';
+          const ox = -7, oy = -7;
+          ctx.fillRect(cx + ox - 3, cy + oy - 3, 6, 6);
+          if (r > 0 && pipeGrid[r-1][c].has('duct')) ctx.fillRect(cx + ox - 2, y, 4, 16 + oy);
+          if (r < ROWS-1 && pipeGrid[r+1][c].has('duct')) ctx.fillRect(cx + ox - 2, cy + oy, 4, 16 - oy);
+          if (c > 0 && pipeGrid[r][c-1].has('duct')) ctx.fillRect(x, cy + oy - 2, 16 + ox, 4);
+          if (c < COLS-1 && pipeGrid[r][c+1].has('duct')) ctx.fillRect(cx + ox, cy + oy - 2, 16 - ox, 4);
+        }
+        if (pSet.has('hose')) {
+          ctx.fillStyle = '#2ecc71';
+          ctx.fillRect(cx - 3, cy - 3, 6, 6);
+          if (r > 0 && pipeGrid[r-1][c].has('hose')) ctx.fillRect(cx - 2, y, 4, 16);
+          if (r < ROWS-1 && pipeGrid[r+1][c].has('hose')) ctx.fillRect(cx - 2, cy, 4, 16);
+          if (c > 0 && pipeGrid[r][c-1].has('hose')) ctx.fillRect(x, cy - 2, 16, 4);
+          if (c < COLS-1 && pipeGrid[r][c+1].has('hose')) ctx.fillRect(cx, cy - 2, 16, 4);
+        }
+        if (pSet.has('pipe')) {
+          ctx.fillStyle = wellPumpActive ? '#00d2d3' : '#bdc3c7';
+          const ox = 7, oy = 7;
+          ctx.fillRect(cx + ox - 3, cy + oy - 3, 6, 6);
+          if (r > 0 && pipeGrid[r-1][c].has('pipe')) ctx.fillRect(cx + ox - 2, y, 4, 16 + oy);
+          if (r < ROWS-1 && pipeGrid[r+1][c].has('pipe')) ctx.fillRect(cx + ox - 2, cy + oy, 4, 16 - oy);
+          if (c > 0 && pipeGrid[r][c-1].has('pipe')) ctx.fillRect(x, cy + oy - 2, 16 + ox, 4);
+          if (c < COLS-1 && pipeGrid[r][c+1].has('pipe')) ctx.fillRect(cx + ox, cy + oy - 2, 16 - ox, 4);
+        }
+      }
+    }
+  }
+
+  // 残土集積所
+  if (upgrades.pulley) {
+    ctx.fillStyle = '#5d4037'; ctx.fillRect(2, (SURFACE_ROWS - 2) * TILE_SIZE - 6, 60, 60);
+    ctx.fillStyle = '#d35400'; ctx.fillRect(52, (SURFACE_ROWS - 3) * TILE_SIZE + 10, 6, 40);
+    ctx.fillRect(36, (SURFACE_ROWS - 3) * TILE_SIZE + 10, 22, 5);
+    ctx.fillStyle = '#7f8c8d'; ctx.fillRect(38, (SURFACE_ROWS - 3) * TILE_SIZE + 18, 8, 8);
+    ctx.fillStyle = '#fff'; ctx.font = '8px monospace';
+    ctx.fillText('大型クレーン', 4, (SURFACE_ROWS - 2) * TILE_SIZE + 16);
+    ctx.fillText(`山: ${dumpedRubbleCount}個`, 4, (SURFACE_ROWS - 2) * TILE_SIZE + 32);
+  } else {
+    ctx.fillStyle = '#4e342e'; ctx.fillRect(4, (SURFACE_ROWS - 2) * TILE_SIZE + 10, 56, 44);
+    ctx.fillStyle = '#fff'; ctx.font = '8px monospace';
+    ctx.fillText('残土置き場', 8, (SURFACE_ROWS - 2) * TILE_SIZE + 24);
+    ctx.fillText(`山: ${dumpedRubbleCount}個`, 8, (SURFACE_ROWS - 2) * TILE_SIZE + 38);
+  }
+
+  // 地上設備
+  if (surfaceEquip.fan) {
+    ctx.fillStyle = '#f39c12'; ctx.fillRect(3 * TILE_SIZE, (SURFACE_ROWS-1) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+    ctx.fillStyle = '#fff'; ctx.fillText('FAN💨', 3 * TILE_SIZE + 3, (SURFACE_ROWS-1) * TILE_SIZE + 20);
+  }
+  if (surfaceEquip.wellPump) {
+    ctx.fillStyle = wellPumpActive ? '#00d2d3' : '#3498db';
+    ctx.fillRect(5 * TILE_SIZE, (SURFACE_ROWS-1) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+    ctx.fillStyle = '#fff'; ctx.fillText('WELL🔩', 5 * TILE_SIZE + 2, (SURFACE_ROWS-1) * TILE_SIZE + 20);
+  }
+  if (surfaceEquip.mudPump) {
+    ctx.fillStyle = mudPumpActive ? '#2ecc71' : '#27ae60';
+    ctx.fillRect(7 * TILE_SIZE, (SURFACE_ROWS-1) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+    ctx.fillStyle = '#fff'; ctx.fillText('PUMP💧', 7 * TILE_SIZE + 2, (SURFACE_ROWS-1) * TILE_SIZE + 20);
+  }
+
+  // 敵描画
+  ctx.font = '18px serif';
+  for (const en of enemies) {
+    ctx.fillText(en.icon, en.x, en.y);
+    if (!en.isFriend) {
+      ctx.fillStyle = 'red'; ctx.fillRect(en.x, en.y - 18, 22, 3);
+      const maxHp = ENEMY_TYPES.find(t=>t.name===en.name)?.hp || 30;
+      ctx.fillStyle = en.isFreeza ? '#a29bfe' : (en.isGolden ? '#f1c40f' : '#2ecc71');
+      ctx.fillRect(en.x, en.y - 18, Math.max(1, (en.hp / maxHp) * 22), 3);
+    }
+  }
+
+  // パーティクル
+  for (const p of particles) {
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x, p.y, 3, 3);
+  }
+
+  // キャラクター
+  const px = player.col * TILE_SIZE, py = player.row * TILE_SIZE;
+  if (!player.isDead) {
+    const isSwinging = (player.swingTimer > 0);
+    ctx.fillStyle = '#f1c40f'; ctx.fillRect(px + 8, py + 3, 16, 9);
+    ctx.fillStyle = '#ffdbac'; ctx.fillRect(px + 10, py + 10, 12, 4);
+    ctx.fillStyle = '#1e88e5'; ctx.fillRect(px + 8, py + 14, 16, 10);
+    ctx.fillStyle = '#0d47a1'; ctx.fillRect(px + 9, py + 24, 14, 8);
+
+    if (player.rubble > 0) {
+      ctx.fillStyle = '#d35400';
+      ctx.fillRect(player.facing === 1 ? px + 2 : px + 22, py + 10, 6, 12);
+    }
+    if (player.hasO2Tank) {
+      ctx.fillStyle = '#00d2d3';
+      ctx.fillRect(player.facing === 1 ? px + 4 : px + 20, py + 6, 4, 8);
+    }
+    ctx.fillStyle = '#bdc3c7';
+    if (isSwinging) {
+      ctx.fillRect(player.facing === 1 ? px + 22 : px - 6, py + 16, 12, 6);
+    } else {
+      ctx.fillRect(player.facing === 1 ? px + 20 : px + 2, py + 6, 6, 10);
+    }
+  } else {
+    ctx.font = '24px serif';
+    ctx.fillText('💀', px + 4, py + 24);
+  }
+
+  ctx.font = 'bold 11px monospace';
+  for (const dt of damageTexts) {
+    ctx.fillStyle = dt.color;
+    ctx.fillText(dt.text, dt.x, dt.y);
+  }
+
+  ctx.fillStyle = '#4fc3f7';
+  for (const wp of weatherParticles) {
+    ctx.fillRect(wp.x, wp.y, 2, 6);
+  }
+
+  if (lightningFlash > 0) {
+    ctx.fillStyle = `rgba(255, 255, 255, ${lightningFlash / 20})`;
+    ctx.fillRect(0, 0, canvas.width, SURFACE_ROWS * TILE_SIZE);
+    lightningFlash--;
+  }
+
+  ctx.restore();
+}
+
+function setMsg(txt) { document.getElementById('msg').innerHTML = txt; }
+
+function buildToolButtons() {
+  const tb = document.getElementById('tool-bar');
+  tb.innerHTML = '';
+  for (const [key, t] of Object.entries(TOOLS)) {
+    if (player.ownedTools[key]) {
+      const b = document.createElement('button');
+      b.className = 'action-btn' + (player.currentAction === key ? ' active' : '');
+      b.id = `btn_${key}`;
+      b.innerText = t.name;
+      b.onclick = () => selectAction(key);
+      tb.appendChild(b);
+    }
+  }
+  // 配管ボタン追加
+  ['duct', 'hose', 'pipe'].forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'action-btn' + (player.currentAction === k ? ' active' : '');
+    b.id = `btn_${k}`;
+    b.innerText = k === 'duct' ? '💨 送風管' : k === 'hose' ? '💧 排水管' : '🔩 井戸本管';
+    b.onclick = () => selectAction(k);
+    tb.appendChild(b);
+  });
+}
+
+function buildToolShopList() {
+  const list = document.getElementById('tool-shop-list');
+  list.innerHTML = '';
+  for (const [key, t] of Object.entries(TOOLS)) {
+    if (t.cost > 0) {
+      const row = document.createElement('div');
+      row.className = 'shop-row';
+      const isOwned = player.ownedTools[key];
+      row.innerHTML = `
+        <span>${t.name} (Lv.${t.reqLv})</span>
+        <button class="shop-btn" id="shop_tool_${key}" onclick="buyTool('${key}', ${t.cost})" ${isOwned ? 'disabled' : ''}>
+          ${isOwned ? '所持中 ✔' : `購入 (¥${t.cost})`}
+        </button>
+      `;
+      list.appendChild(row);
+    }
+  }
+}
+
+function updateUI() {
+  document.getElementById('hpText').innerText = `${Math.ceil(player.hp)}/${player.maxHp}`;
+  document.getElementById('hp-bar').style.width = `${(player.hp / player.maxHp) * 100}%`;
+  document.getElementById('o2Text').innerText = `${player.o2}%`;
+  document.getElementById('o2-bar').style.width = `${player.o2}%`;
+  document.getElementById('rubbleText').innerText = `${player.rubble}/${player.maxRubble} 個`;
+  document.getElementById('rubble-bar').style.width = `${(player.rubble / player.maxRubble) * 100}%`;
+  document.getElementById('dumpText').innerText = `${dumpedRubbleCount} 個`;
+  document.getElementById('levelText').innerText = `Lv.${player.level}`;
+  document.getElementById('expText').innerText = `${player.exp}/${player.nextExp}`;
+  document.getElementById('moneyText').innerText = `¥${player.money}`;
+  
+  const currentMeters = Math.max(0, (player.row - SURFACE_ROWS + 1) * 0.1).toFixed(1);
+  document.getElementById('depthText').innerText = `${currentMeters}m`;
+
+  // 珈琲解禁判定（帯水層から井戸水を汲み上げた実績があるか）
+  const coffeeBtn = document.getElementById('btn_item_coffee');
+  if (pumpedWaterLiters > 0) {
+    coffeeBtn.disabled = (player.money < 50);
+    coffeeBtn.innerText = '☕ 天然井戸水珈琲 (¥50で全回復)';
+  } else {
+    coffeeBtn.disabled = true;
+    coffeeBtn.innerText = '☕ 極上井戸水珈琲 (未開通: 井戸水を汲み上げろ)';
+  }
+
+  // 設備ショップ判定
+  if (!surfaceEquip.fan) document.getElementById('buyFanBtn').disabled = (player.money < 50);
+  if (!surfaceEquip.mudPump) document.getElementById('buyPumpBtn').disabled = (player.money < 120);
+  if (!surfaceEquip.wellPump) document.getElementById('buyWellPumpBtn').disabled = (player.money < 250);
+  if (!upgrades.pulley) document.getElementById('buyPulleyBtn').disabled = (player.money < 150);
+  if (!upgrades.motorChain) document.getElementById('buyMotorBtn').disabled = (player.money < 500);
+  if (!player.hasO2Tank) document.getElementById('buyTankBtn').disabled = (player.money < 180);
+
+  // ツールショップボタン判定
+  for (const [key, t] of Object.entries(TOOLS)) {
+    const btn = document.getElementById(`shop_tool_${key}`);
+    if (btn && !player.ownedTools[key]) {
+      btn.disabled = (player.level < t.reqLv || player.money < t.cost);
+      if (player.level < t.reqLv) {
+        btn.innerText = `Lv.${t.reqLv}で解放`;
+      } else {
+        btn.innerText = `購入 (¥${t.cost})`;
+      }
+    }
+  }
+}
+
+initMap();
+initEnemies();
+buildToolButtons();
+buildToolShopList();
+updateUI();
+requestAnimationFrame(update);
+</script>
+</body>
+</html>
